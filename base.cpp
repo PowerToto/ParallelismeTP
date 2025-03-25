@@ -50,14 +50,13 @@ int* expoMat(int* gridCpu,int N,int K){
 	}
 }
 int* expoMatGPU(int* grid,int N,int K,cl::Kernel* kernel,cl::Buffer p,cl::Buffer q,cl::Buffer r){
-	clu_Queue->enqueueReadBuffer(r, true, 0, (N * N) * sizeof(int),grid);
-
 	if (K == 1){
 		return grid;
 	}
 	if(K%2 != 0){
-		clu_Queue->enqueueWriteBuffer(p, true, 0, (N * N) * sizeof(int), expoMatGPU(grid,N,K/2,kernel,p,q,r));
-		clu_Queue->enqueueWriteBuffer(q, true, 0, (N * N) * sizeof(int), expoMatGPU(grid,N,K/2,kernel,p,q,r));	
+		int* even_calc = expoMatGPU(grid,N,K/2,kernel,p,q,r);
+		clu_Queue->enqueueWriteBuffer(p, true, 0, (N * N) * sizeof(int),even_calc );
+		clu_Queue->enqueueWriteBuffer(q, true, 0, (N * N) * sizeof(int), even_calc);	
 	} else{
 		clu_Queue->enqueueWriteBuffer(p, true, 0, (N * N) * sizeof(int), grid);
 		clu_Queue->enqueueWriteBuffer(q, true, 0, (N * N) * sizeof(int), expoMatGPU(grid,N,K-1,kernel,p,q,r));	
@@ -69,6 +68,10 @@ int* expoMatGPU(int* grid,int N,int K,cl::Kernel* kernel,cl::Buffer p,cl::Buffer
 		kernel->setArg(3, N);
 		cl_int clerr = clu_Queue->enqueueNDRangeKernel(*kernel, cl::NullRange, cl::NDRange(N*N),cl::NullRange);
 		cluCheckError(clerr, "Error running the kernel");
+
+		clu_Queue->enqueueReadBuffer(r, true, 0, (N * N) * sizeof(int),grid);
+		return grid;
+
 }
 int main(int argc, char **argv)
 {

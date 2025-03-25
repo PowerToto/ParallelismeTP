@@ -14,3 +14,4 @@ kernel void mulmat( global const int *P, global const int *Q, global int *R, int
 //Q[id - id%N + i]
 //id - id%N allows to go back to the top of the column
 // +i is the iteration through the column
+
